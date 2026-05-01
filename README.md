@@ -8,7 +8,7 @@ Un agente de IA agéntica que recibe código Python, lo analiza, genera pruebas 
 
 ## ¿Qué es este proyecto?
 
-**Quality Guardian** es el proyecto central del taller COIL entre la Universidad de Caldas (UdeC) y la Universidad Metropolitana de Bucaramanga (UMB). Ocho células mixtas de estudiantes construyen un agente que:
+**Quality Guardian** es el proyecto central del taller COIL entre la Universidad de Caldas (UdeC) y la Universidad Manuela Beltrán (UMB). Ocho células mixtas de estudiantes construyen un agente que:
 
 1. Recibe un archivo `.py` como input
 2. Analiza el código usando un LLM local (Llama 3 vía Ollama)
@@ -50,4 +50,4 @@ quality-guardian-mvp/
 
 ---
 
-*Universidad de Caldas × Universidad Metropolitana de Bucaramanga · 2026*
+*Universidad de Caldas × Universidad Manuela Beltrán · 2026*
