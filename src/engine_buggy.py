@@ -50,7 +50,7 @@ def liquidar_nomina(
         raise ErrorNomina("Las horas extras no pueden ser negativas.")
 
     # R1 — hora extra diurna: valor_hora * (1 + 25%)
-    valor_he_diurnas = horas_extras_diurnas * vlr_hora * (1 + RECARGO_DIURNO)
+    valor_he_diurnas = horas_extras_diurnas * vlr_hora * RECARGO_DIURNO  # BUG-1: falta el +1, paga solo el 25% en vez del 125%
 
     # R2 — hora extra nocturna: valor_hora * (1 + 75%)
     valor_he_nocturnas = horas_extras_nocturnas * vlr_hora * (1 + RECARGO_NOCTURNO)
@@ -58,11 +58,11 @@ def liquidar_nomina(
     devengado = salario_base + valor_he_diurnas + valor_he_nocturnas
 
     # R4 — auxilio de transporte: solo si salario_base no supera 2 SMLMV
-    auxilio = AUXILIO_TRANSPORTE if salario_base <= TOPE_AUXILIO_TRANSPORTE else 0.0
+    auxilio = AUXILIO_TRANSPORTE if salario_base < TOPE_AUXILIO_TRANSPORTE else 0.0  # BUG-2: < en vez de <=, borde exacto 2.6M pierde auxilio
 
     # R3 — descuentos de ley: salud y pensión sobre devengado (no incluye auxilio)
-    descuento_salud = devengado * DESCUENTO_SALUD
-    descuento_pension = devengado * DESCUENTO_PENSION
+    descuento_salud = (devengado + auxilio) * DESCUENTO_SALUD  # BUG-3: descuento incluye auxilio, la ley lo excluye
+    descuento_pension = (devengado + auxilio) * DESCUENTO_PENSION
     total_descuentos = descuento_salud + descuento_pension
 
     neto_a_pagar = devengado + auxilio - total_descuentos

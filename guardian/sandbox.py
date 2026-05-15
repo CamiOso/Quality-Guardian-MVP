@@ -1,15 +1,18 @@
 import subprocess
+import shutil
+import sys
 import json
 from pathlib import Path
 
 
 def ejecutar_en_sandbox() -> dict:
-    """Corre pytest dentro del contenedor Docker y retorna el veredicto."""
+    """Corre pytest en Docker (o localmente si Docker no está disponible)."""
 
-    print("[sandbox] iniciando contenedor guardian-sandbox...")
+    usar_docker = shutil.which("docker") is not None
 
-    resultado = subprocess.run(
-        [
+    if usar_docker:
+        print("[sandbox] iniciando contenedor guardian-sandbox...")
+        cmd = [
             "docker", "run", "--rm",
             "-v", f"{Path.cwd()}:/app",
             "-w", "/app",
@@ -18,10 +21,17 @@ def ejecutar_en_sandbox() -> dict:
             "--json-report",
             "--json-report-file=.report.json",
             "-v",
-        ],
-        capture_output=True,
-        text=True,
-    )
+        ]
+    else:
+        print("[sandbox] Docker no disponible, ejecutando pytest localmente...")
+        cmd = [
+            sys.executable, "-m", "pytest", "test_generated.py",
+            "--json-report",
+            "--json-report-file=.report.json",
+            "-v",
+        ]
+
+    resultado = subprocess.run(cmd, capture_output=True, text=True)
 
     print(resultado.stdout)
 
