@@ -1,17 +1,6 @@
 """Motor de liquidación de nómina — reglas laborales colombianas 2024."""
 
-# Constantes legales (Decreto 2655 de 2023 y Decreto 2871 de 2023)
-SALARIO_MINIMO = 1_300_000.0
-TOPE_AUXILIO_TRANSPORTE = 2 * SALARIO_MINIMO   # 2 SMLMV = 2.600.000
-AUXILIO_TRANSPORTE = 162_000.0
-RECARGO_DIURNO = 0.25
-RECARGO_NOCTURNO = 0.75
-DESCUENTO_SALUD = 0.04
-DESCUENTO_PENSION = 0.04
-
-
-class ErrorNomina(ValueError):
-    """Excepción para datos de entrada inválidos en la liquidación."""
+from typing import Dict
 
 
 def liquidar_nomina(
@@ -19,59 +8,76 @@ def liquidar_nomina(
     horas_extras_diurnas: int,
     horas_extras_nocturnas: int,
     vlr_hora: float,
-) -> dict:
-    """Liquida la nómina mensual de un trabajador.
+) -> Dict[str, float]:
+    """Liquida la nómina mensual de un trabajador según la legislación colombiana.
+
+    Reglas aplicadas:
+        R1 (CST art. 168): Hora extra diurna = vlr_hora * 1.25 (recargo del 25%).
+        R2 (CST art. 168): Hora extra nocturna = vlr_hora * 1.75 (recargo del 75%).
+        R3 (Ley 100/1993): Descuento del 4% para salud y 4% para pensión
+            calculados sobre el total_devengado (salario_base + extras).
+        R4 (Decreto 2871/2023): Auxilio de transporte de $162.000 cuando
+            salario_base <= $2.600.000 (2 SMLMV).
+        R5 (CST art. 145): salario_base no puede ser menor al SMLMV ($1.300.000).
+            Ninguna cantidad de horas puede ser negativa.
 
     Args:
-        salario_base: Salario base mensual en COP. Mínimo SMLMV (1.300.000).
-        horas_extras_diurnas: Horas extra con recargo diurno del 25%.
-        horas_extras_nocturnas: Horas extra con recargo nocturno del 75%.
+        salario_base: Salario base mensual en COP. Mínimo $1.300.000 (SMLMV 2024).
+        horas_extras_diurnas: Cantidad de horas extra con recargo diurno (>= 0).
+        horas_extras_nocturnas: Cantidad de horas extra con recargo nocturno (>= 0).
         vlr_hora: Valor de la hora ordinaria en COP.
 
     Returns:
-        dict con las siguientes llaves:
-            - devengado (float): salario_base + valor horas extras
-            - auxilio_transporte (float): 162.000 si aplica, 0 si no
-            - descuento_salud (float): 4% sobre devengado
-            - descuento_pension (float): 4% sobre devengado
-            - total_descuentos (float): salud + pensión
-            - neto_a_pagar (float): devengado + auxilio - descuentos
+        Diccionario con el desglose completo de la liquidación:
+            - salario_base (float): Salario base ingresado.
+            - extra_diurna (float): Valor total de horas extras diurnas.
+            - extra_nocturna (float): Valor total de horas extras nocturnas.
+            - auxilio_transporte (float): $162.000 si aplica, $0 si no.
+            - salud (float): Descuento del 4% sobre total_devengado.
+            - pension (float): Descuento del 4% sobre total_devengado.
+            - neto_pagar (float): Monto final a pagar al trabajador.
 
     Raises:
-        ErrorNomina: Si salario_base < SMLMV o alguna hora es negativa.
+        ValueError: Si salario_base < 1.300.000 o alguna hora es negativa.
     """
-    # R5 — validaciones de entrada
-    if salario_base < SALARIO_MINIMO:
-        raise ErrorNomina(
+    # R5 — validación de salario mínimo legal
+    if salario_base < 1_300_000:
+        raise ValueError(
             f"El salario_base ({salario_base:,.0f}) no puede ser menor "
-            f"al SMLMV ({SALARIO_MINIMO:,.0f})."
+            "al SMLMV vigente de $1.300.000."
         )
+
+    # R5 — validación de horas no negativas
     if horas_extras_diurnas < 0 or horas_extras_nocturnas < 0:
-        raise ErrorNomina("Las horas extras no pueden ser negativas.")
+        raise ValueError(
+            "Las horas extras no pueden ser negativas. "
+            f"Recibido: diurnas={horas_extras_diurnas}, nocturnas={horas_extras_nocturnas}."
+        )
 
-    # R1 — hora extra diurna: valor_hora * (1 + 25%)
-    valor_he_diurnas = horas_extras_diurnas * vlr_hora * (1 + RECARGO_DIURNO)
+    # R1 — hora extra diurna: vlr_hora * 1.25
+    extra_diurna = horas_extras_diurnas * vlr_hora * 1.25
 
-    # R2 — hora extra nocturna: valor_hora * (1 + 75%)
-    valor_he_nocturnas = horas_extras_nocturnas * vlr_hora * (1 + RECARGO_NOCTURNO)
+    # R2 — hora extra nocturna: vlr_hora * 1.75
+    extra_nocturna = horas_extras_nocturnas * vlr_hora * 1.75
 
-    devengado = salario_base + valor_he_diurnas + valor_he_nocturnas
+    # Base para calcular descuentos de seguridad social (no incluye auxilio)
+    total_devengado = salario_base + extra_diurna + extra_nocturna
 
-    # R4 — auxilio de transporte: solo si salario_base no supera 2 SMLMV
-    auxilio = AUXILIO_TRANSPORTE if salario_base <= TOPE_AUXILIO_TRANSPORTE else 0.0
+    # R4 — auxilio de transporte: aplica si salario_base <= 2 SMLMV
+    auxilio_transporte = 162_000.0 if salario_base <= 2_600_000 else 0.0
 
-    # R3 — descuentos de ley: salud y pensión sobre devengado (no incluye auxilio)
-    descuento_salud = devengado * DESCUENTO_SALUD
-    descuento_pension = devengado * DESCUENTO_PENSION
-    total_descuentos = descuento_salud + descuento_pension
+    # R3 — descuentos de seguridad social sobre total_devengado
+    salud = total_devengado * 0.04
+    pension = total_devengado * 0.04
 
-    neto_a_pagar = devengado + auxilio - total_descuentos
+    neto_pagar = total_devengado + auxilio_transporte - salud - pension
 
     return {
-        "devengado": round(devengado, 2),
-        "auxilio_transporte": round(auxilio, 2),
-        "descuento_salud": round(descuento_salud, 2),
-        "descuento_pension": round(descuento_pension, 2),
-        "total_descuentos": round(total_descuentos, 2),
-        "neto_a_pagar": round(neto_a_pagar, 2),
+        "salario_base": round(salario_base, 2),
+        "extra_diurna": round(extra_diurna, 2),
+        "extra_nocturna": round(extra_nocturna, 2),
+        "auxilio_transporte": round(auxilio_transporte, 2),
+        "salud": round(salud, 2),
+        "pension": round(pension, 2),
+        "neto_pagar": round(neto_pagar, 2),
     }
