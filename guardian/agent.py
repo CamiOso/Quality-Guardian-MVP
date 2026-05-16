@@ -12,7 +12,7 @@ def _crear_llm():
 
     if groq_key:
         print("[agent] usando Groq API (llama3-8b-8192)...")
-        return ChatGroq(model="llama3-8b-8192", api_key=groq_key)
+        return ChatGroq(model="llama-3.1-8b-instant", api_key=groq_key)
 
     print(f"[agent] usando Ollama local en {ollama_url}...")
     return OllamaLLM(
@@ -66,8 +66,11 @@ Tu tarea:
     cadena = prompt | llm
     resultado = cadena.invoke({"codigo": codigo, "casos": casos})
 
+    # ChatGroq devuelve AIMessage, OllamaLLM devuelve str
+    texto = resultado.content if hasattr(resultado, "content") else resultado
+
     # Limpia bloques markdown si el modelo los incluye
-    codigo_limpio = re.sub(r"```(?:python)?|```", "", resultado).strip()
+    codigo_limpio = re.sub(r"```(?:python)?|```", "", texto).strip()
 
     Path("test_generated.py").write_text(codigo_limpio, encoding="utf-8")
     print("[agent] test_generated.py listo.")
