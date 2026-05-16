@@ -16,7 +16,7 @@ def _crear_llm():
 
     print(f"[agent] usando Ollama local en {ollama_url}...")
     return OllamaLLM(
-        model="llama3:8b",
+        model="llama3.2:3b",
         base_url=ollama_url,
         num_ctx=2048,
         num_predict=800,
@@ -69,8 +69,18 @@ Tu tarea:
     # ChatGroq devuelve AIMessage, OllamaLLM devuelve str
     texto = resultado.content if hasattr(resultado, "content") else resultado
 
-    # Limpia bloques markdown si el modelo los incluye
-    codigo_limpio = re.sub(r"```(?:python)?|```", "", texto).strip()
+    # Quita bloques markdown
+    texto = re.sub(r"```(?:python)?|```", "", texto)
+
+    # Arranca desde el primer import/from para descartar cualquier
+    # cabecera ini-style o comentarios de ruta que el LLM añade antes del código
+    lineas = texto.splitlines()
+    inicio = next(
+        (i for i, l in enumerate(lineas) if l.strip().startswith(("import ", "from "))),
+        0,
+    )
+
+    codigo_limpio = "\n".join(lineas[inicio:]).strip()
 
     Path("test_generated.py").write_text(codigo_limpio, encoding="utf-8")
     print("[agent] test_generated.py listo.")

@@ -24,6 +24,10 @@ def main() -> None:
     print(f"  Veredicto      : {resultado['veredicto']}")
     print(f"  Casos pasados  : {resultado['passed']}")
     print(f"  Bugs detectados: {resultado['bugs_detectados']}")
+    if resultado.get("mensajes_error"):
+        print("  Detalle de bugs:")
+        for msg in resultado["mensajes_error"]:
+            print(f"    · {msg}")
     print("=" * 50)
 
 

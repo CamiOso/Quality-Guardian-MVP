@@ -36,3 +36,10 @@ yarn-error.log*
 
 # Docker
 *.log
+
+# Environment / secrets
+.env
+.env.*
+
+# Aportado por la célula UMB (no se versiona aquí)
+docs/casos_prueba.md
