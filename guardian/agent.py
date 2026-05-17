@@ -19,9 +19,20 @@ def _crear_llm():
         model="llama3.2:3b",
         base_url=ollama_url,
         num_ctx=2048,
-        num_predict=800,
+        num_predict=900,
         num_thread=2,
+        num_batch=64,
     )
+
+
+def _resumir_casos(texto: str) -> str:
+    """Extrae solo Entrada/Salida Esperada/Regla de cada caso para reducir tokens."""
+    lineas_utiles = []
+    for linea in texto.splitlines():
+        s = linea.strip()
+        if s.startswith(("### C-", "- Entrada:", "- Salida Esperada:", "- Regla Validada:")):
+            lineas_utiles.append(s)
+    return "\n".join(lineas_utiles)
 
 
 def generar_tests(ruta_engine: str, ruta_casos: str = "docs/casos_prueba.md") -> None:
@@ -35,7 +46,7 @@ def generar_tests(ruta_engine: str, ruta_casos: str = "docs/casos_prueba.md") ->
 
     if ruta_casos.exists():
         print(f"[agent] leyendo {ruta_casos}...")
-        casos = ruta_casos.read_text(encoding="utf-8")
+        casos = _resumir_casos(ruta_casos.read_text(encoding="utf-8"))
     else:
         print("[agent] casos_prueba.md no encontrado, usando casos genéricos...")
         casos = "Generar casos de prueba básicos cubriendo happy path, bordes y errores."
