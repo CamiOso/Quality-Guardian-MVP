@@ -22,7 +22,10 @@ def _extraer_mensajes_error(reporte: dict) -> list[str]:
 def ejecutar_en_sandbox() -> dict:
     """Corre pytest en Docker (o localmente si Docker no está disponible)."""
 
-    usar_docker = shutil.which("docker") is not None
+    docker_bin = shutil.which("docker")
+    usar_docker = docker_bin is not None and subprocess.run(
+        ["docker", "info"], capture_output=True
+    ).returncode == 0
 
     if usar_docker:
         print("[sandbox] iniciando contenedor guardian-sandbox...")
