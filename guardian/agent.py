@@ -53,6 +53,10 @@ def generar_tests(ruta_engine: str, ruta_casos: str = "docs/casos_prueba.md") ->
 
     llm = _crear_llm()
 
+    # Deriva el módulo de import a partir de la ruta del archivo auditado
+    # Ej: src/engine_buggy.py -> from src.engine_buggy import liquidar_nomina
+    modulo_import = str(ruta_engine).replace("/", ".").removesuffix(".py")
+
     prompt = ChatPromptTemplate.from_template("""
 Eres un QA Engineer experto en Python. Analiza el siguiente código:
 
@@ -71,15 +75,15 @@ Tu tarea:
 4. Usa EXACTAMENTE los valores de entrada y salida esperada de cada caso. No inventes valores.
 5. El salario_base mínimo válido es 1_300_000. Nunca uses valores menores en tests que no esperan excepción.
 6. Los parámetros se llaman: salario_base, horas_extras_diurnas, horas_extras_nocturnas, vlr_hora.
-7. Incluye el import correcto del módulo (from src.engine import liquidar_nomina).
-8. Usa pytest.raises para los casos que esperan excepciones (ValueError).
+7. REGLA CRÍTICA: El import DEBE ser exactamente: from {modulo_import} import liquidar_nomina
+8. Usa pytest.raises para los casos que esperan excepciones (ValueError o ErrorNomina).
 9. No agregues pytest.main() ni ninguna línea al final del archivo.
 10. Devuelve SOLO el código Python, sin explicaciones ni bloques markdown.
 """)
 
     print("[agent] generando test_generated.py...")
     cadena = prompt | llm
-    resultado = cadena.invoke({"codigo": codigo, "casos": casos})
+    resultado = cadena.invoke({"codigo": codigo, "casos": casos, "modulo_import": modulo_import})
 
     # ChatGroq devuelve AIMessage, OllamaLLM devuelve str
     texto = resultado.content if hasattr(resultado, "content") else resultado
