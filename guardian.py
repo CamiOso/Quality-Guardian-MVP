@@ -19,14 +19,27 @@ def _generar_reporte_md(resultado: dict, ruta_engine: str) -> None:
         "",
         f"## Veredicto: {resultado['veredicto']}",
         "",
-        f"| Casos ejecutados | Casos pasados | Bugs detectados |",
-        f"|---|---|---|",
+        "| Casos ejecutados | Casos pasados | Bugs detectados |",
+        "|---|---|---|",
         f"| {total} | {resultado['passed']} | {resultado['bugs_detectados']} |",
         "",
+        "---",
+        "",
+        "## Detalle de casos de prueba",
+        "",
+        "| # | Test | Estado | Duración (s) |",
+        "|---|---|---|---|",
     ]
 
+    for i, t in enumerate(resultado.get("detalle_tests", []), start=1):
+        estado = "✅ PASÓ" if t["outcome"] == "passed" else "❌ FALLÓ"
+        nombre = t["nombre"].replace("test_generated.py::", "")
+        lineas.append(f"| {i} | `{nombre}` | {estado} | {t['duracion']} |")
+
+    lineas.append("")
+
     if resultado.get("mensajes_error"):
-        lineas += ["## Detalle de bugs encontrados", ""]
+        lineas += ["## Bugs encontrados", ""]
         for msg in resultado["mensajes_error"]:
             lineas.append(f"- `{msg}`")
         lineas.append("")

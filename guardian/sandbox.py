@@ -6,17 +6,33 @@ from pathlib import Path
 
 
 def _extraer_mensajes_error(reporte: dict) -> list[str]:
-    """Extrae los mensajes de error de cada test fallido del reporte JSON."""
     mensajes = []
     for test in reporte.get("tests", []):
         if test.get("outcome") == "failed":
             nombre = test.get("nodeid", "test desconocido")
             call = test.get("call", {})
             longrepr = call.get("longrepr", "sin detalle")
-            # Tomar solo la última línea (el AssertionError o mensaje concreto)
             linea_error = longrepr.strip().splitlines()[-1] if longrepr else "sin detalle"
             mensajes.append(f"{nombre}: {linea_error}")
     return mensajes
+
+
+def _extraer_detalle_tests(reporte: dict) -> list[dict]:
+    detalle = []
+    for test in reporte.get("tests", []):
+        nombre = test.get("nodeid", "desconocido")
+        outcome = test.get("outcome", "unknown")
+        duracion = round(test.get("call", {}).get("duration", 0), 4)
+        call = test.get("call", {})
+        longrepr = call.get("longrepr", "")
+        linea_error = longrepr.strip().splitlines()[-1] if longrepr and outcome == "failed" else ""
+        detalle.append({
+            "nombre": nombre,
+            "outcome": outcome,
+            "duracion": duracion,
+            "error": linea_error,
+        })
+    return detalle
 
 
 def ejecutar_en_sandbox() -> dict:
@@ -67,6 +83,7 @@ def ejecutar_en_sandbox() -> dict:
     passed = reporte["summary"].get("passed", 0)
     failed = reporte["summary"].get("failed", 0)
     mensajes_error = _extraer_mensajes_error(reporte)
+    detalle_tests = _extraer_detalle_tests(reporte)
 
     print(f"[sandbox] resultados: {passed} passed · {failed} failed")
     if mensajes_error:
@@ -80,4 +97,5 @@ def ejecutar_en_sandbox() -> dict:
         "bugs_detectados": failed,
         "veredicto": "APROBADO" if failed == 0 else "RECHAZADO CON BUGS",
         "mensajes_error": mensajes_error,
+        "detalle_tests": detalle_tests,
     }
