@@ -19,6 +19,7 @@ env/
 .pytest_cache/
 .report.json
 test_generated.py
+reporte_final.md
 
 # IDE
 .vscode/

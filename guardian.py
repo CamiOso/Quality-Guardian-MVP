@@ -1,6 +1,44 @@
 import sys
+from datetime import datetime
+from pathlib import Path
 from guardian.agent import generar_tests
 from guardian.sandbox import ejecutar_en_sandbox
+
+
+def _generar_reporte_md(resultado: dict, ruta_engine: str) -> None:
+    total = resultado["passed"] + resultado["failed"]
+    fecha = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    lineas = [
+        "# Reporte Final · Quality Guardian · Nómina Pro",
+        "",
+        f"**Fecha:** {fecha}",
+        f"**Archivo auditado:** `{ruta_engine}`",
+        "",
+        "---",
+        "",
+        f"## Veredicto: {resultado['veredicto']}",
+        "",
+        f"| Casos ejecutados | Casos pasados | Bugs detectados |",
+        f"|---|---|---|",
+        f"| {total} | {resultado['passed']} | {resultado['bugs_detectados']} |",
+        "",
+    ]
+
+    if resultado.get("mensajes_error"):
+        lineas += ["## Detalle de bugs encontrados", ""]
+        for msg in resultado["mensajes_error"]:
+            lineas.append(f"- `{msg}`")
+        lineas.append("")
+
+    lineas += [
+        "---",
+        "",
+        "_Reporte generado automáticamente por el Quality Guardian._",
+    ]
+
+    Path("reporte_final.md").write_text("\n".join(lineas), encoding="utf-8")
+    print("[guardian] reporte_final.md generado.")
 
 
 def main() -> None:
@@ -29,6 +67,8 @@ def main() -> None:
         for msg in resultado["mensajes_error"]:
             print(f"    · {msg}")
     print("=" * 50)
+
+    _generar_reporte_md(resultado, ruta_engine)
 
 
 if __name__ == "__main__":
