@@ -16,7 +16,7 @@ def _crear_llm():
 
     print(f"[agent] usando Ollama local en {ollama_url}...")
     return OllamaLLM(
-        model="llama3.2:3b",
+        model="llama3.1:8b",
         base_url=ollama_url,
         num_ctx=2048,
         num_predict=900,
@@ -26,11 +26,11 @@ def _crear_llm():
 
 
 def _resumir_casos(texto: str) -> str:
-    """Extrae solo Entrada/Salida Esperada/Regla de cada caso para reducir tokens."""
+    """Extrae título, entrada, salida esperada y regla de cada caso."""
     lineas_utiles = []
     for linea in texto.splitlines():
         s = linea.strip()
-        if s.startswith(("### C-", "- Entrada:", "- Salida Esperada:", "- Regla Validada:")):
+        if s.startswith(("## CP-", "**Entrada:**", "**Salida esperada:**", "**Regla:**", "-")):
             lineas_utiles.append(s)
     return "\n".join(lineas_utiles)
 
@@ -66,11 +66,13 @@ Y los siguientes casos de prueba definidos por el equipo:
 
 Tu tarea:
 1. Genera un archivo de pruebas completo usando pytest.
-2. Cubre todos los casos de prueba listados.
-3. Incluye el import correcto del módulo (from src.engine import liquidar_nomina).
-4. Cada función de test debe tener un nombre descriptivo.
-5. Usa pytest.raises para los casos que esperan excepciones.
-6. Devuelve SOLO el código Python, sin explicaciones ni bloques markdown.
+2. Usa EXACTAMENTE los valores de entrada y salida esperada de cada caso. No inventes valores.
+3. El salario_base mínimo válido es 1_300_000. Nunca uses valores menores en tests que no esperan excepción.
+4. Los parámetros se llaman: salario_base, horas_extras_diurnas, horas_extras_nocturnas, vlr_hora.
+5. Incluye el import correcto del módulo (from src.engine import liquidar_nomina).
+6. Cada función de test debe tener un nombre descriptivo basado en el caso (cp01, cp02, etc).
+7. Usa pytest.raises para los casos que esperan excepciones (ValueError).
+8. Devuelve SOLO el código Python, sin explicaciones ni bloques markdown.
 """)
 
     print("[agent] generando test_generated.py...")

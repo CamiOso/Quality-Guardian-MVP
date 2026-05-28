@@ -1,172 +1,211 @@
 # Matriz de Casos de Prueba · Quality Guardian · Nómina Pro
 
-Cada caso incluye: entrada, salida esperada y la regla de negocio que valida.
-El agente debe generar un test de pytest por cada caso.
+Cada caso incluye entrada completa y salida esperada completa del dict.
+El agente debe usar EXACTAMENTE estos valores al generar los tests pytest.
+
+Fórmulas aplicadas:
+- extra_diurna = horas_extras_diurnas * vlr_hora * 1.25
+- extra_nocturna = horas_extras_nocturnas * vlr_hora * 1.75
+- total_devengado = salario_base + extra_diurna + extra_nocturna
+- auxilio_transporte = 162000 si salario_base <= 2600000, si no 0
+- salud = total_devengado * 0.04
+- pension = total_devengado * 0.04
+- neto_pagar = total_devengado + auxilio_transporte - salud - pension
 
 ---
 
-## CP-01 · Happy path básico sin extras (R3, R4)
+## CP-01 · Happy path básico sin extras
 
-**Regla:** R3 (seguridad social) · R4 (auxilio de transporte)
+**Regla:** R3, R4
 
 **Entrada:**
-- salario_base: 1_500_000
+- salario_base: 1500000
 - horas_extras_diurnas: 0
 - horas_extras_nocturnas: 0
-- vlr_hora: 6_250
+- vlr_hora: 6250
 
 **Salida esperada:**
-- total_devengado: 1_500_000
-- descuento_salud: 60_000  (4% de 1_500_000)
-- descuento_pension: 60_000  (4% de 1_500_000)
-- auxilio_transporte: 162_000  (aplica porque salario_base <= 2_600_000)
-- total_a_pagar: 1_542_000
+- salario_base: 1500000
+- extra_diurna: 0
+- extra_nocturna: 0
+- auxilio_transporte: 162000
+- salud: 60000
+- pension: 60000
+- neto_pagar: 1542000
 
 ---
 
-## CP-02 · Solo horas extras diurnas (R1)
+## CP-02 · Solo horas extras diurnas
 
-**Regla:** R1 (recargo diurno 25%)
+**Regla:** R1, R3, R4
 
 **Entrada:**
-- salario_base: 2_000_000
+- salario_base: 2000000
 - horas_extras_diurnas: 10
 - horas_extras_nocturnas: 0
-- vlr_hora: 8_333
+- vlr_hora: 8333
 
 **Salida esperada:**
-- extras_diurnas: 10 * 8_333 * 1.25 = 104_162.5
-- total_devengado: 2_104_162.5
+- salario_base: 2000000
+- extra_diurna: 104162.5
+- extra_nocturna: 0
+- auxilio_transporte: 162000
+- salud: 84166.5
+- pension: 84166.5
+- neto_pagar: 2097829.5
 
 ---
 
-## CP-03 · Solo horas extras nocturnas (R2)
+## CP-03 · Solo horas extras nocturnas
 
-**Regla:** R2 (recargo nocturno 75%)
+**Regla:** R2, R3, R4
 
 **Entrada:**
-- salario_base: 2_000_000
+- salario_base: 2000000
 - horas_extras_diurnas: 0
 - horas_extras_nocturnas: 8
-- vlr_hora: 8_333
+- vlr_hora: 8333
 
 **Salida esperada:**
-- extras_nocturnas: 8 * 8_333 * 1.75 = 116_662
-- total_devengado: 2_116_662
+- salario_base: 2000000
+- extra_diurna: 0
+- extra_nocturna: 116662.0
+- auxilio_transporte: 162000
+- salud: 84666.48
+- pension: 84666.48
+- neto_pagar: 2109329.04
 
 ---
 
-## CP-04 · Horas extras mixtas — diurnas y nocturnas (R1 + R2) ⬅ caso propio célula
+## CP-04 · Horas extras mixtas diurnas y nocturnas
 
-**Regla:** R1 + R2 combinadas
+**Regla:** R1, R2, R3, R4
 
 **Entrada:**
-- salario_base: 1_800_000
+- salario_base: 1800000
 - horas_extras_diurnas: 5
 - horas_extras_nocturnas: 3
-- vlr_hora: 7_500
+- vlr_hora: 7500
 
 **Salida esperada:**
-- extras_diurnas: 5 * 7_500 * 1.25 = 46_875
-- extras_nocturnas: 3 * 7_500 * 1.75 = 39_375
-- total_devengado: 1_886_250
-- descuento_salud: 75_450  (4% de 1_886_250)
-- descuento_pension: 75_450
-- auxilio_transporte: 162_000
-- total_a_pagar: 1_897_350
+- salario_base: 1800000
+- extra_diurna: 46875
+- extra_nocturna: 39375
+- auxilio_transporte: 162000
+- salud: 75450
+- pension: 75450
+- neto_pagar: 1897350
 
 ---
 
-## CP-05 · Caso límite auxilio de transporte — salario exacto $2.600.000 (R4)
+## CP-05 · Caso límite auxilio de transporte — salario exacto 2600000
 
-**Regla:** R4 (umbral exacto del auxilio)
+**Regla:** R4 (límite inclusivo)
 
 **Entrada:**
-- salario_base: 2_600_000
+- salario_base: 2600000
 - horas_extras_diurnas: 0
 - horas_extras_nocturnas: 0
-- vlr_hora: 10_833
+- vlr_hora: 10833
 
 **Salida esperada:**
-- auxilio_transporte: 162_000  (aplica porque salario_base <= 2_600_000, el límite es inclusivo)
-- total_devengado: 2_600_000
+- salario_base: 2600000
+- extra_diurna: 0
+- extra_nocturna: 0
+- auxilio_transporte: 162000
+- salud: 104000
+- pension: 104000
+- neto_pagar: 2554000
 
 ---
 
-## CP-06 · Salario por encima del umbral — sin auxilio de transporte (R4)
+## CP-06 · Salario por encima del umbral — sin auxilio
 
-**Regla:** R4 (no aplica auxilio)
+**Regla:** R4 (no aplica)
 
 **Entrada:**
-- salario_base: 2_600_001
+- salario_base: 2600001
 - horas_extras_diurnas: 0
 - horas_extras_nocturnas: 0
-- vlr_hora: 10_833
+- vlr_hora: 10833
 
 **Salida esperada:**
-- auxilio_transporte: 0  (salario_base > 2_600_000, no aplica)
+- salario_base: 2600001
+- extra_diurna: 0
+- extra_nocturna: 0
+- auxilio_transporte: 0
+- salud: 104000.04
+- pension: 104000.04
+- neto_pagar: 2392000.92
 
 ---
 
-## CP-07 · Verificación exacta del descuento de salud (R3)
+## CP-07 · Verificación exacta del descuento de salud
 
-**Regla:** R3 (4% salud sobre total devengado incluyendo extras)
+**Regla:** R3
 
 **Entrada:**
-- salario_base: 1_500_000
+- salario_base: 1500000
 - horas_extras_diurnas: 4
 - horas_extras_nocturnas: 0
-- vlr_hora: 6_250
+- vlr_hora: 6250
 
 **Salida esperada:**
-- extras_diurnas: 4 * 6_250 * 1.25 = 31_250
-- total_devengado: 1_531_250
-- descuento_salud: 61_250  (exactamente 4% de 1_531_250)
+- salario_base: 1500000
+- extra_diurna: 31250
+- extra_nocturna: 0
+- auxilio_transporte: 162000
+- salud: 61250
+- pension: 61250
+- neto_pagar: 1570750.0
 
 ---
 
-## CP-08 · Excepción por horas negativas (R5)
+## CP-08 · Excepción por horas negativas
 
-**Regla:** R5 (validación de entradas)
+**Regla:** R5
 
 **Entrada:**
-- salario_base: 1_500_000
+- salario_base: 1500000
 - horas_extras_diurnas: -5
 - horas_extras_nocturnas: 0
-- vlr_hora: 6_250
+- vlr_hora: 6250
 
 **Salida esperada:**
-- Lanza excepción con mensaje claro indicando que las horas no pueden ser negativas
+- Lanza ValueError
 
 ---
 
-## CP-09 · Excepción por salario menor al mínimo (R5)
+## CP-09 · Excepción por salario menor al mínimo
 
-**Regla:** R5 (salario_base < $1.300.000)
+**Regla:** R5
 
 **Entrada:**
-- salario_base: 1_200_000
+- salario_base: 1200000
 - horas_extras_diurnas: 0
 - horas_extras_nocturnas: 0
-- vlr_hora: 5_000
+- vlr_hora: 5000
 
 **Salida esperada:**
-- Lanza excepción con mensaje claro indicando que el salario es menor al mínimo permitido
+- Lanza ValueError
 
 ---
 
-## CP-10 · Salario exactamente en el mínimo permitido — sin excepción (R5) ⬅ caso propio célula
+## CP-10 · Salario exactamente en el mínimo permitido
 
-**Regla:** R5 (borde inferior, debe funcionar sin error)
+**Regla:** R5 (borde inferior válido)
 
 **Entrada:**
-- salario_base: 1_300_000
+- salario_base: 1300000
 - horas_extras_diurnas: 0
 - horas_extras_nocturnas: 0
-- vlr_hora: 5_416
+- vlr_hora: 5416
 
 **Salida esperada:**
-- No lanza excepción
-- auxilio_transporte: 162_000  (aplica porque 1_300_000 <= 2_600_000)
-- descuento_salud: 52_000  (4% de 1_300_000)
-- descuento_pension: 52_000
+- salario_base: 1300000
+- extra_diurna: 0
+- extra_nocturna: 0
+- auxilio_transporte: 162000
+- salud: 52000
+- pension: 52000
+- neto_pagar: 1358000.0
