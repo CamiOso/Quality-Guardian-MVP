@@ -66,13 +66,15 @@ Y los siguientes casos de prueba definidos por el equipo:
 
 Tu tarea:
 1. Genera un archivo de pruebas completo usando pytest.
-2. Usa EXACTAMENTE los valores de entrada y salida esperada de cada caso. No inventes valores.
-3. El salario_base mínimo válido es 1_300_000. Nunca uses valores menores en tests que no esperan excepción.
-4. Los parámetros se llaman: salario_base, horas_extras_diurnas, horas_extras_nocturnas, vlr_hora.
-5. Incluye el import correcto del módulo (from src.engine import liquidar_nomina).
-6. Cada función de test debe tener un nombre descriptivo basado en el caso (cp01, cp02, etc).
-7. Usa pytest.raises para los casos que esperan excepciones (ValueError).
-8. Devuelve SOLO el código Python, sin explicaciones ni bloques markdown.
+2. REGLA CRÍTICA: Todas las funciones DEBEN empezar con "test_" (ejemplo: def test_cp01_...).
+3. REGLA CRÍTICA: Las funciones NO deben tener parámetros. Solo def test_nombre(): sin nada adentro de los paréntesis.
+4. Usa EXACTAMENTE los valores de entrada y salida esperada de cada caso. No inventes valores.
+5. El salario_base mínimo válido es 1_300_000. Nunca uses valores menores en tests que no esperan excepción.
+6. Los parámetros se llaman: salario_base, horas_extras_diurnas, horas_extras_nocturnas, vlr_hora.
+7. Incluye el import correcto del módulo (from src.engine import liquidar_nomina).
+8. Usa pytest.raises para los casos que esperan excepciones (ValueError).
+9. No agregues pytest.main() ni ninguna línea al final del archivo.
+10. Devuelve SOLO el código Python, sin explicaciones ni bloques markdown.
 """)
 
     print("[agent] generando test_generated.py...")
@@ -94,6 +96,17 @@ Tu tarea:
     )
 
     codigo_limpio = "\n".join(lineas[inicio:]).strip()
+
+    # Elimina líneas finales que no sean Python válido (frases del LLM)
+    import ast
+    lineas_codigo = codigo_limpio.splitlines()
+    while lineas_codigo:
+        try:
+            ast.parse("\n".join(lineas_codigo))
+            break
+        except SyntaxError:
+            lineas_codigo.pop()
+    codigo_limpio = "\n".join(lineas_codigo).strip()
 
     Path("test_generated.py").write_text(codigo_limpio, encoding="utf-8")
     print("[agent] test_generated.py listo.")
